@@ -244,7 +244,30 @@ const updateUI = function (currentAccount) {
   //Display Summary
   calcDisplaySummary(currentAccount);
 };
-let currentAccount;
+const startLogOutTimer = function () {
+  let time = 30;
+  //we are calling are function once immediately as the setInterval function would run after 1sec it has been declared due to the time given inside it.
+  const tick = () => {
+    //logic to build timer.
+    const min = String(Math.trunc(time / 60)).padStart(2, '0');
+    const sec = String(Math.trunc(time % 60)).padStart(2, '0');
+
+    labelTimer.textContent = `${min}:${sec}`;
+    if (time === 0) {
+      clearInterval(timer);
+      containerApp.style.opacity = '0';
+      containerApp.style.display = 'none';
+      info.style.display = 'grid';
+      labelWelcome.textContent = 'Log in again to get started';
+    }
+    time--;
+  };
+  tick();
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
+
+let currentAccount, timer;
 
 //Adding Event listers
 btnLogin.addEventListener('click', function (event) {
@@ -265,6 +288,10 @@ btnLogin.addEventListener('click', function (event) {
     containerApp.style.opacity = '100';
     containerApp.style.display = 'grid';
     info.style.display = 'none';
+
+    //Timer
+    if (timer) clearInterval();
+    timer = startLogOutTimer();
 
     updateUI(currentAccount);
   } else {
@@ -305,6 +332,10 @@ btnTransfer.addEventListener('click', function (event) {
 
     //Updating UI
     updateUI(currentAccount);
+
+    //Resetting timer
+    clearInterval(timer);
+    timer = startLogOutTimer();
   } else alert(`Their is some mistake you are doing while transferring the money. Either, the amount or person you're sending`);
 });
 
@@ -317,10 +348,18 @@ btnLoan.addEventListener('click', function (e) {
     requestLoanAmount > 0 &&
     currentAccount.movements.some((value) => value >= requestLoanAmount * 0.1)
   ) {
-    currentAccount.movements.push(requestLoanAmount);
-    currentAccount.movementsDates.push(new Date().toISOString());
+    setTimeout(() => {
+      // Add Movement
+      currentAccount.movements.push(requestLoanAmount);
+      //Add loan Date
+      currentAccount.movementsDates.push(new Date().toISOString());
+      //Update UI
+      updateUI(currentAccount);
 
-    updateUI(currentAccount);
+      //Resetting timer
+      clearInterval(timer);
+      timer = startLogOutTimer();
+    }, 2500);
   } else console.log(`You should have ${requestLoanAmount * 0.1} as deposit for loan`);
   inputLoanAmount.value = '';
 });
@@ -390,7 +429,7 @@ labelBalance.addEventListener('click', function () {
 const movementsUI2 = [...document.querySelectorAll('.movements__value')];
 //but here we have to perfom maping function seperately over it to get the textContent from inside of it.
 
-//We can't right this without an eventHandler because if we did then this code will get executed as soon as we starts our application and
+//We can't right this without an eventHandler because if we did then this code will get executed as as we starts our application and
 //then will be over written as soon as we login with the deposits of the current user.
 
 //giving rows background color on clicking over the balance on the basis of their index using remainder operator
